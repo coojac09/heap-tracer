@@ -30,7 +30,24 @@
 
 int reentrancy_guard;
 
+void* (*real_calloc)(size_t nmemb, size_t size);
+void *calloc(size_t nmemb, size_t size) {
 
+    BEGIN_HOOK
+
+    real_calloc = dlsym(RTLD_NEXT, "calloc");
+    void* chunk = real_calloc(nmemb, size);
+
+    HOOK {
+        size_t s = malloc_usable_size(chunk);
+        fprintf(stderr, BLUE "CALLOC(%4ld, %4ld):  %p-%p (%4ld Bytes)\n" RESET, nmemb, size, chunk, chunk+s, s);
+    }
+
+    END_HOOK
+
+    return chunk;
+
+}
 
 void* (*real_malloc)(size_t size); 
 void* malloc(size_t size) {
@@ -87,3 +104,4 @@ void* realloc(void* ptr, size_t size) {
 
     return chunk;
 }
+
